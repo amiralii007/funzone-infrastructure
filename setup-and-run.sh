@@ -327,7 +327,18 @@ else
     COMPOSE_CMD="docker compose"
 fi
 
+# Stop and remove containers first to avoid ContainerConfig errors
+echo "Stopping existing containers..."
+$COMPOSE_CMD down 2>/dev/null || true
+
+# Remove the problematic backend container if it exists
+if docker ps -a --format '{{.Names}}' | grep -q "^funzone_backend$"; then
+    echo "Removing old backend container..."
+    docker rm -f funzone_backend 2>/dev/null || true
+fi
+
 # Build and start containers
+echo "Building and starting containers..."
 $COMPOSE_CMD up -d --build
 
 echo ""
