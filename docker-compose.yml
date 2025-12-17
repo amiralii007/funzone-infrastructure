@@ -157,6 +157,28 @@ services:
       timeout: 10s
       retries: 3
 
+  # React Admin Panel
+  # Build context should point to the funzone-admin-panel repository
+  frontend-admin:
+    build:
+      context: ../funzone-admin-panel
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost/api}
+    container_name: funzone_frontend_admin
+    ports:
+      - "3004:80"
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost/api}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # Nginx Reverse Proxy
   nginx:
     build:
@@ -177,6 +199,8 @@ services:
       frontend-customer:
         condition: service_healthy
       frontend-owner:
+        condition: service_healthy
+      frontend-admin:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1/health || exit 1"]
