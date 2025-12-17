@@ -103,7 +103,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c"]
-    command: "python wait-for-db.py && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    command: "python wait-for-db.py && python manage.py migrate --noinput && python add_categories.py || echo 'Warning: Failed to initialize categories' && python manage.py runserver 0.0.0.0:8000"
 
   # React Customer App (Development)
   # Build context should point to the funzone-frontend-customer repository
