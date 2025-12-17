@@ -243,30 +243,43 @@ if ! grep -q "SERVER_IP=" .env; then
     fi
 fi
 
-# Update ALLOWED_HOSTS with server IP
-if grep -q "ALLOWED_HOSTS=" .env; then
-    CURRENT_HOSTS=$(grep "ALLOWED_HOSTS=" .env | cut -d'=' -f2)
-    if [[ "$CURRENT_HOSTS" != *"$SERVER_IP"* ]]; then
-        # Add server IP to ALLOWED_HOSTS
-        NEW_HOSTS="$CURRENT_HOSTS,$SERVER_IP"
-        if sed -i "s|ALLOWED_HOSTS=.*|ALLOWED_HOSTS=$NEW_HOSTS|" .env 2>/dev/null; then
-            print_success "Updated ALLOWED_HOSTS with server IP"
-        else
-            print_warning "Could not update ALLOWED_HOSTS directly, trying with sudo..."
-            sudo sed -i "s|ALLOWED_HOSTS=.*|ALLOWED_HOSTS=$NEW_HOSTS|" .env && sudo chown $USER:$USER .env
-            print_success "Updated ALLOWED_HOSTS with server IP (with sudo)"
-        fi
+# Update FRONTEND_URL with server IP
+if grep -q "FRONTEND_URL=" .env; then
+    if sed -i "s|FRONTEND_URL=.*|FRONTEND_URL=http://$SERVER_IP|" .env 2>/dev/null; then
+        print_success "Updated FRONTEND_URL with server IP"
     else
-        print_success "Server IP already in ALLOWED_HOSTS"
+        print_warning "Could not update FRONTEND_URL directly, trying with sudo..."
+        sudo sed -i "s|FRONTEND_URL=.*|FRONTEND_URL=http://$SERVER_IP|" .env && sudo chown $USER:$USER .env
+        print_success "Updated FRONTEND_URL with server IP (with sudo)"
     fi
 else
-    # Add ALLOWED_HOSTS if not present
-    if echo "ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP,backend,frontend-customer,frontend-owner,nginx" >> .env 2>/dev/null; then
-        print_success "Added ALLOWED_HOSTS to .env"
+    # Add FRONTEND_URL if not present
+    if echo "FRONTEND_URL=http://$SERVER_IP" >> .env 2>/dev/null; then
+        print_success "Added FRONTEND_URL to .env"
     else
-        print_warning "Could not append ALLOWED_HOSTS, trying with sudo..."
-        echo "ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP,backend,frontend-customer,frontend-owner,nginx" | sudo tee -a .env > /dev/null && sudo chown $USER:$USER .env
-        print_success "Added ALLOWED_HOSTS to .env (with sudo)"
+        print_warning "Could not append FRONTEND_URL, trying with sudo..."
+        echo "FRONTEND_URL=http://$SERVER_IP" | sudo tee -a .env > /dev/null && sudo chown $USER:$USER .env
+        print_success "Added FRONTEND_URL to .env (with sudo)"
+    fi
+fi
+
+# Update OWNER_FRONTEND_URL with server IP
+if grep -q "OWNER_FRONTEND_URL=" .env; then
+    if sed -i "s|OWNER_FRONTEND_URL=.*|OWNER_FRONTEND_URL=http://$SERVER_IP/owner|" .env 2>/dev/null; then
+        print_success "Updated OWNER_FRONTEND_URL with server IP"
+    else
+        print_warning "Could not update OWNER_FRONTEND_URL directly, trying with sudo..."
+        sudo sed -i "s|OWNER_FRONTEND_URL=.*|OWNER_FRONTEND_URL=http://$SERVER_IP/owner|" .env && sudo chown $USER:$USER .env
+        print_success "Updated OWNER_FRONTEND_URL with server IP (with sudo)"
+    fi
+else
+    # Add OWNER_FRONTEND_URL if not present
+    if echo "OWNER_FRONTEND_URL=http://$SERVER_IP/owner" >> .env 2>/dev/null; then
+        print_success "Added OWNER_FRONTEND_URL to .env"
+    else
+        print_warning "Could not append OWNER_FRONTEND_URL, trying with sudo..."
+        echo "OWNER_FRONTEND_URL=http://$SERVER_IP/owner" | sudo tee -a .env > /dev/null && sudo chown $USER:$USER .env
+        print_success "Added OWNER_FRONTEND_URL to .env (with sudo)"
     fi
 fi
 
