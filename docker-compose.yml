@@ -92,6 +92,8 @@ services:
       - MONGO_LOG_DB=logdb
       - MONGO_USER=${MONGO_USER:-mongo_user}
       - MONGO_PASSWORD=${MONGO_PASSWORD:-mongo_password}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+      - OWNER_FRONTEND_URL=${OWNER_FRONTEND_URL:-http://localhost/owner}
     volumes:
       - backend_media:/app/media
       - backend_staticfiles:/app/staticfiles

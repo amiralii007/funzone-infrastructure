@@ -142,6 +142,10 @@ SERVER_IP=$SERVER_IP
 
 # Django ALLOWED_HOSTS (include server IP)
 ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP,backend,frontend-customer,frontend-owner,nginx
+
+# Frontend URLs for payment callbacks
+FRONTEND_URL=http://$SERVER_IP
+OWNER_FRONTEND_URL=http://$SERVER_IP/owner
 EOF
         then
             print_success "Created new .env file"
@@ -170,6 +174,10 @@ SERVER_IP=$SERVER_IP
 
 # Django ALLOWED_HOSTS (include server IP)
 ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP,backend,frontend-customer,frontend-owner,nginx
+
+# Frontend URLs for payment callbacks
+FRONTEND_URL=http://$SERVER_IP
+OWNER_FRONTEND_URL=http://$SERVER_IP/owner
 EOF
             sudo chown $USER:$USER .env
             print_success "Created new .env file (with sudo)"
