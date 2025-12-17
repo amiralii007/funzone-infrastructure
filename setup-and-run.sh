@@ -92,14 +92,39 @@ fi
 echo ""
 echo "Creating/updating .env file..."
 
+# Check if we can write to the current directory
+if [ ! -w . ]; then
+    print_error "Cannot write to current directory. Checking if .env exists and is owned by root..."
+    if [ -f .env ] && [ ! -w .env ]; then
+        print_warning ".env file exists but is not writable (possibly owned by root)"
+        echo "Attempting to fix permissions..."
+        sudo chown $USER:$USER .env 2>/dev/null || {
+            print_error "Could not change ownership of .env file"
+            echo "Please run: sudo chown $USER:$USER .env"
+            exit 1
+        }
+        print_success "Fixed .env file permissions"
+    else
+        print_error "Cannot write to current directory"
+        echo "Please check directory permissions or run with appropriate user"
+        exit 1
+    fi
+fi
+
 if [ ! -f .env ]; then
     # Create new .env from env.example if it exists
     if [ -f env.example ]; then
-        cp env.example .env
-        print_success "Created .env from env.example"
+        if cp env.example .env 2>/dev/null; then
+            print_success "Created .env from env.example"
+        else
+            print_error "Failed to create .env file (permission denied)"
+            echo "Trying with sudo..."
+            sudo cp env.example .env && sudo chown $USER:$USER .env
+            print_success "Created .env from env.example (with sudo)"
+        fi
     else
         # Create .env from scratch
-        cat > .env << EOF
+        if cat > .env << EOF
 # Django Backend
 SECRET_KEY=$SECRET_KEY
 DEBUG=False
@@ -119,10 +144,47 @@ VITE_API_BASE_URL=http://$SERVER_IP/api
 # Server IP
 SERVER_IP=$SERVER_IP
 EOF
-        print_success "Created new .env file"
+        then
+            print_success "Created new .env file"
+        else
+            print_error "Failed to create .env file (permission denied)"
+            echo "Trying with sudo..."
+            sudo tee .env > /dev/null << EOF
+# Django Backend
+SECRET_KEY=$SECRET_KEY
+DEBUG=False
+
+# Database
+POSTGRES_DB=funzone_db
+POSTGRES_USER=funzone_user
+POSTGRES_PASSWORD=funzone_password
+
+# MongoDB
+MONGO_USER=mongo_user
+MONGO_PASSWORD=mongo_password
+
+# API Base URL (for frontend builds)
+VITE_API_BASE_URL=http://$SERVER_IP/api
+
+# Server IP
+SERVER_IP=$SERVER_IP
+EOF
+            sudo chown $USER:$USER .env
+            print_success "Created new .env file (with sudo)"
+        fi
     fi
 else
     print_success ".env file already exists"
+    # Ensure we can write to it
+    if [ ! -w .env ]; then
+        print_warning ".env file is not writable, fixing permissions..."
+        sudo chown $USER:$USER .env 2>/dev/null || {
+            print_error "Could not change ownership of .env file"
+            echo "Please run: sudo chown $USER:$USER .env"
+            exit 1
+        }
+        print_success "Fixed .env file permissions"
+    fi
 fi
 
 # Update SECRET_KEY in .env if needed
@@ -131,23 +193,44 @@ if grep -q "your-super-secret-key-change-in-production" .env || ! grep -q "SECRE
         SECRET_KEY=$(openssl rand -base64 64 | tr -d '\n' | tr -d '=' | cut -c1-50)
     fi
     if grep -q "SECRET_KEY=" .env; then
-        sed -i "s|SECRET_KEY=.*|SECRET_KEY=$SECRET_KEY|" .env
+        if sed -i "s|SECRET_KEY=.*|SECRET_KEY=$SECRET_KEY|" .env 2>/dev/null; then
+            print_success "Updated SECRET_KEY in .env"
+        else
+            print_warning "Could not update SECRET_KEY directly, trying with sudo..."
+            sudo sed -i "s|SECRET_KEY=.*|SECRET_KEY=$SECRET_KEY|" .env && sudo chown $USER:$USER .env
+            print_success "Updated SECRET_KEY in .env (with sudo)"
+        fi
     else
-        echo "SECRET_KEY=$SECRET_KEY" >> .env
+        if echo "SECRET_KEY=$SECRET_KEY" >> .env 2>/dev/null; then
+            print_success "Added SECRET_KEY to .env"
+        else
+            print_warning "Could not append SECRET_KEY, trying with sudo..."
+            echo "SECRET_KEY=$SECRET_KEY" | sudo tee -a .env > /dev/null && sudo chown $USER:$USER .env
+            print_success "Added SECRET_KEY to .env (with sudo)"
+        fi
     fi
-    print_success "Updated SECRET_KEY in .env"
 fi
 
 # Update VITE_API_BASE_URL with server IP
 if grep -q "VITE_API_BASE_URL=" .env; then
-    sed -i "s|VITE_API_BASE_URL=.*|VITE_API_BASE_URL=http://$SERVER_IP/api|" .env
-    print_success "Updated VITE_API_BASE_URL with server IP"
+    if sed -i "s|VITE_API_BASE_URL=.*|VITE_API_BASE_URL=http://$SERVER_IP/api|" .env 2>/dev/null; then
+        print_success "Updated VITE_API_BASE_URL with server IP"
+    else
+        print_warning "Could not update VITE_API_BASE_URL directly, trying with sudo..."
+        sudo sed -i "s|VITE_API_BASE_URL=.*|VITE_API_BASE_URL=http://$SERVER_IP/api|" .env && sudo chown $USER:$USER .env
+        print_success "Updated VITE_API_BASE_URL with server IP (with sudo)"
+    fi
 fi
 
 # Add SERVER_IP to .env if not present
 if ! grep -q "SERVER_IP=" .env; then
-    echo "SERVER_IP=$SERVER_IP" >> .env
-    print_success "Added SERVER_IP to .env"
+    if echo "SERVER_IP=$SERVER_IP" >> .env 2>/dev/null; then
+        print_success "Added SERVER_IP to .env"
+    else
+        print_warning "Could not append SERVER_IP, trying with sudo..."
+        echo "SERVER_IP=$SERVER_IP" | sudo tee -a .env > /dev/null && sudo chown $USER:$USER .env
+        print_success "Added SERVER_IP to .env (with sudo)"
+    fi
 fi
 
 # Display .env file (without sensitive data)
