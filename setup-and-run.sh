@@ -143,6 +143,9 @@ VITE_API_BASE_URL=http://$SERVER_IP/api
 
 # Server IP
 SERVER_IP=$SERVER_IP
+
+# Django ALLOWED_HOSTS (include server IP)
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP,backend,frontend-customer,frontend-owner,nginx
 EOF
         then
             print_success "Created new .env file"
@@ -168,6 +171,9 @@ VITE_API_BASE_URL=http://$SERVER_IP/api
 
 # Server IP
 SERVER_IP=$SERVER_IP
+
+# Django ALLOWED_HOSTS (include server IP)
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP,backend,frontend-customer,frontend-owner,nginx
 EOF
             sudo chown $USER:$USER .env
             print_success "Created new .env file (with sudo)"
@@ -233,6 +239,60 @@ if ! grep -q "SERVER_IP=" .env; then
     fi
 fi
 
+# Update ALLOWED_HOSTS with server IP
+if grep -q "ALLOWED_HOSTS=" .env; then
+    CURRENT_HOSTS=$(grep "ALLOWED_HOSTS=" .env | cut -d'=' -f2)
+    if [[ "$CURRENT_HOSTS" != *"$SERVER_IP"* ]]; then
+        # Add server IP to ALLOWED_HOSTS
+        NEW_HOSTS="$CURRENT_HOSTS,$SERVER_IP"
+        if sed -i "s|ALLOWED_HOSTS=.*|ALLOWED_HOSTS=$NEW_HOSTS|" .env 2>/dev/null; then
+            print_success "Updated ALLOWED_HOSTS with server IP"
+        else
+            print_warning "Could not update ALLOWED_HOSTS directly, trying with sudo..."
+            sudo sed -i "s|ALLOWED_HOSTS=.*|ALLOWED_HOSTS=$NEW_HOSTS|" .env && sudo chown $USER:$USER .env
+            print_success "Updated ALLOWED_HOSTS with server IP (with sudo)"
+        fi
+    else
+        print_success "Server IP already in ALLOWED_HOSTS"
+    fi
+else
+    # Add ALLOWED_HOSTS if not present
+    if echo "ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP,backend,frontend-customer,frontend-owner,nginx" >> .env 2>/dev/null; then
+        print_success "Added ALLOWED_HOSTS to .env"
+    else
+        print_warning "Could not append ALLOWED_HOSTS, trying with sudo..."
+        echo "ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP,backend,frontend-customer,frontend-owner,nginx" | sudo tee -a .env > /dev/null && sudo chown $USER:$USER .env
+        print_success "Added ALLOWED_HOSTS to .env (with sudo)"
+    fi
+fi
+
+# Update ALLOWED_HOSTS with server IP
+if grep -q "ALLOWED_HOSTS=" .env; then
+    CURRENT_HOSTS=$(grep "ALLOWED_HOSTS=" .env | cut -d'=' -f2)
+    if [[ "$CURRENT_HOSTS" != *"$SERVER_IP"* ]]; then
+        # Add server IP to ALLOWED_HOSTS
+        NEW_HOSTS="$CURRENT_HOSTS,$SERVER_IP"
+        if sed -i "s|ALLOWED_HOSTS=.*|ALLOWED_HOSTS=$NEW_HOSTS|" .env 2>/dev/null; then
+            print_success "Updated ALLOWED_HOSTS with server IP"
+        else
+            print_warning "Could not update ALLOWED_HOSTS directly, trying with sudo..."
+            sudo sed -i "s|ALLOWED_HOSTS=.*|ALLOWED_HOSTS=$NEW_HOSTS|" .env && sudo chown $USER:$USER .env
+            print_success "Updated ALLOWED_HOSTS with server IP (with sudo)"
+        fi
+    else
+        print_success "Server IP already in ALLOWED_HOSTS"
+    fi
+else
+    # Add ALLOWED_HOSTS if not present
+    if echo "ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP" >> .env 2>/dev/null; then
+        print_success "Added ALLOWED_HOSTS to .env"
+    else
+        print_warning "Could not append ALLOWED_HOSTS, trying with sudo..."
+        echo "ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,$SERVER_IP" | sudo tee -a .env > /dev/null && sudo chown $USER:$USER .env
+        print_success "Added ALLOWED_HOSTS to .env (with sudo)"
+    fi
+fi
+
 # Display .env file (without sensitive data)
 echo ""
 echo "=========================================="
@@ -291,3 +351,4 @@ echo ""
 echo "To restart containers:"
 echo "  $COMPOSE_CMD restart"
 echo ""
+

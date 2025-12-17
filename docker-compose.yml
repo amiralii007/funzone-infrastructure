@@ -81,7 +81,7 @@ services:
       - SECRET_KEY=${SECRET_KEY:-your-super-secret-key-change-in-production}
       - DATABASE_URL=postgresql://funzone_user:funzone_password@db:5432/funzone_db
       - REDIS_URL=redis://redis:6379/0
-      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,backend,frontend-customer,frontend-owner,nginx
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,backend,frontend-customer,frontend-owner,nginx}
       - DJANGO_SETTINGS_MODULE=funzone.settings_production
       - POSTGRES_USER=funzone_user
       - POSTGRES_PASSWORD=funzone_password
