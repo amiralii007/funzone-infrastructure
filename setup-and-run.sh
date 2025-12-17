@@ -94,20 +94,16 @@ echo "Creating/updating .env file..."
 
 # Check if we can write to the current directory
 if [ ! -w . ]; then
-    print_error "Cannot write to current directory. Checking if .env exists and is owned by root..."
+    print_warning "Cannot write to current directory. Will use sudo for file operations if needed."
     if [ -f .env ] && [ ! -w .env ]; then
         print_warning ".env file exists but is not writable (possibly owned by root)"
         echo "Attempting to fix permissions..."
         sudo chown $USER:$USER .env 2>/dev/null || {
-            print_error "Could not change ownership of .env file"
-            echo "Please run: sudo chown $USER:$USER .env"
-            exit 1
+            print_warning "Could not change ownership of .env file, will use sudo for updates"
         }
-        print_success "Fixed .env file permissions"
-    else
-        print_error "Cannot write to current directory"
-        echo "Please check directory permissions or run with appropriate user"
-        exit 1
+        if [ -w .env ]; then
+            print_success "Fixed .env file permissions"
+        fi
     fi
 fi
 
